@@ -39,6 +39,7 @@ List docker image:
 Enter the following command to run the client container:
 
 > docker rm -f client
+
 > docker run --name client --link docker-server:server docker-rest-client-container
 
 Explanation of the last command:
