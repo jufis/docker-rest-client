@@ -1,0 +1,1 @@
+#Sample docker rest client
