@@ -1,0 +1,6 @@
+packaging:
+  add:
+    - target/${project.artifactId}-${project.version}-${git.buildnumber}.jar
+
+tag:
+    ${project.groupId}/${project.name}:${project.version}-${git.buildnumber}
