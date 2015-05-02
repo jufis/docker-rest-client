@@ -46,13 +46,9 @@ List docker image:
 #Running the client in docker container
 Enter the following command to run the client container:
 
-> docker rm -f client
+> docker run -i -t --rm --name client --link docker-server:server net.jufis/docker-rest-client:GIT_TAG
 
-Don't worry if above throws errors 1st time.
-
-> docker run --name client --link docker-server:server net.jufis/docker-rest-client:<GIT_TAG>
-
-You can find the <GIT_TAG> if you list the docker images with:
+You can find the GIT_TAG if you list the docker images with:
 
 > docker images
 
