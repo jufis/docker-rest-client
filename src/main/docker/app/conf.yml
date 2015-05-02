@@ -3,4 +3,4 @@ packaging:
     - target/${project.artifactId}-${project.version}-${git.buildnumber}.jar
 
 tag:
-    ${project.groupId}/${project.name}:${project.version}-${git.buildnumber}
+    localhost:5000/${project.name}:${project.version}-${git.buildnumber}
