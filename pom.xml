@@ -4,7 +4,7 @@
 
 	<groupId>net.jufis</groupId>
 	<artifactId>docker-rest-client</artifactId>
-	<version>1.0.1-GA</version>
+	<version>2.0.1-GA</version>
 	<name>docker-rest-client</name>
 	<description>docker-rest-client</description>
 
@@ -31,6 +31,11 @@
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -54,66 +59,130 @@
 						<phase>prepare-package</phase>
 						<configuration>
 							<javaScriptBuildnumberCallback>
-								((tag!=null &amp;&amp; tag.trim().length>0)?tag:"NOTAG") + "_" + branch + "_" + shortRevision + "_" + commitsCount
+								((tag!=null &amp;&amp; tag.trim().length>0)?tag:"NOTAG") + "_" + branch
 							</javaScriptBuildnumberCallback>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
+			<!-- enable docker maven plugin -->
 			<plugin>
-				<groupId>com.alexecollins.docker</groupId>
+				<groupId>org.jolokia</groupId>
 				<artifactId>docker-maven-plugin</artifactId>
-				<version>2.8.4</version>
+				<version>0.11.3</version>
+				<configuration>
+					<dockerHost>tcp://0.0.0.0:2375</dockerHost>
+					<useColor>true</useColor>
+					<verbose>true</verbose>
+					<registry>registry.jufis.net:443</registry>
+					<authConfig>
+						<username></username>
+						<password></password>
+					</authConfig>
+					<images>
+						<image>
+							<alias>dockerClient</alias>
+							<!-- if there is no . or : before / like here there is no registry 
+								defined, so registry tag in use now -->
+							<name>jufis/docker-rest-client:${git.buildnumber}</name>
+
+							<build>
+								<from>dockerfile/java:oracle-java7</from>
+								<maintainer>jufis@jufis.net</maintainer>
+								<tags>
+									<tag>${git.buildnumber}</tag>
+								</tags>
+								<ports>
+									<port>9080</port>
+								</ports>
+								<volumes>
+									<volume>/tmp</volume>
+								</volumes>
+								<command>java -jar
+									/maven/${project.artifactId}-${project.version}-${git.buildnumber}.jar</command>
+								<assembly>
+									<basedir>/maven</basedir>
+									<descriptorRef>artifact</descriptorRef>
+								</assembly>
+							</build>
+
+							<run>
+								<namingStrategy>alias</namingStrategy>
+								<hostname>restclient</hostname>
+								<log>
+									<enabled>true</enabled>
+									<prefix>REST_CLIENT</prefix>
+									<date>DEFAULT</date>
+									<color>yellow</color>
+								</log>
+								<links>
+									<link>dockerServer:server</link>
+								</links>
+							</run>
+						</image>
+						<image>
+							<alias>dockerServer</alias>
+							<!-- if there is no . or : before / like here there is no registry 
+								defined, so registry tag in use now -->
+							<name>jufis/docker-rest-server:${git.buildnumber}</name>
+
+							<build>
+								<from>dockerfile/java:oracle-java7</from>
+								<maintainer>jufis@jufis.net</maintainer>
+								<tags>
+									<tag>${git.buildnumber}</tag>
+								</tags>
+								<ports>
+									<port>8080</port>
+								</ports>
+								<volumes>
+									<volume>/tmp</volume>
+								</volumes>
+								<command>java -jar
+									/maven/${project.artifactId}-${project.version}-${git.buildnumber}.jar</command>
+								<assembly>
+									<basedir>/maven</basedir>
+									<descriptorRef>artifact</descriptorRef>
+								</assembly>
+							</build>
+
+							<run>
+								<namingStrategy>alias</namingStrategy>
+								<hostname>restserver</hostname>
+								<log>
+									<enabled>true</enabled>
+									<prefix>REST_SERVER</prefix>
+									<date>DEFAULT</date>
+									<color>red</color>
+								</log>
+							</run>
+						</image>
+					</images>
+				</configuration>
+				<!-- Connect this plugin to the maven lifecycle around the integration-test 
+					phase. I.e. start the container in pre-integration-test and stop it in post-integration-test. -->
 				<executions>
 					<execution>
+						<id>start</id>
+						<phase>pre-integration-test</phase>
 						<goals>
-							<goal>clean</goal>
-							<goal>package</goal>
+							<goal>build</goal>
 							<goal>start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>stop</id>
+						<phase>post-integration-test</phase>
+						<goals>
 							<goal>stop</goal>
 						</goals>
 					</execution>
 				</executions>
-				<configuration>
-					<!-- out of the box, you shoud not need to have these, as they'll use 
-						sensible defaults -->
-					<!-- (optional) your installed version -->
-					<!-- <version>1.13</version> -->
-					<!-- (optional) if you want to push to a private repo -->
-					<!-- <username>jufis</username> -->
-					<!-- <email>jufis@jufis.net</email> -->
-					<serverAddress>http://localhost:5000</serverAddress> 
-					<!-- (optional) change here if you are using another port/host, e.g. 4243 -->
-					<!-- <host>http://localhost:5000</host> -->
-					<!-- use local registry or remote from above -->
-					<host>unix:///var/run/docker.sock</host>
-					<!-- (optional) if you need to run with configured SSL certificates -->
-					<!-- <dockerCertPath>${user.home}/.docker</dockerCertPath> -->
-					<!-- (optional) remove images created by Dockerfile (default false) -->
-					<!-- <removeIntermediateImages>false</removeIntermediateImages> -->
-					<!-- (optional) do/do not cache images (default true), disable to get 
-						the freshest images -->
-					<cache>false</cache>
-					<!-- (optional) exclude certain images -->
-					<!-- <exclude>app,other</exclude> -->
-					<!-- (optional) ignore problems with permission errors (e.g. if running 
-						on CircleCI -->
-					<!-- <permissionErrorTolerant>true</permissionErrorTolerant> -->
-				</configuration>
-				<dependencies>
-					<!-- only needed if you are using Boot2Docker -->
-					<dependency>
-						<groupId>com.alexecollins.docker</groupId>
-						<artifactId>docker-java-orchestration-plugin-boot2docker</artifactId>
-						<version>2.8.4</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 			<!-- specify manifest fields -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.3.2</version>
 				<configuration>
 					<archive>
 						<manifestEntries>
