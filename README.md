@@ -1,9 +1,9 @@
 #Sample docker rest client
 This is a sample app inheriting from spring boot to create a REST client container to communicate for the docker-rest-server repository purposes.
 
-It uses the alexecollins [docker-maven-plugin](https://github.com/alexec/docker-maven-plugin "docker-maven-plugin") to create a docker image on package mvn target. 
+It uses the rhuss excelenet [docker-maven-plugin](https://github.com/rhuss/docker-maven-plugin "rhuss docker-maven-plugin") to build/start/stop/push/check logs a docker image. 
 
-It assumes a local docker-registry running on port 5000.
+It assumes you run a local private docker-registry running on port 443 over SSL wihout basic auth.
 
 When packaging using maven the docker container extracted is TAGed as follows:
 
@@ -11,7 +11,7 @@ When packaging using maven the docker container extracted is TAGed as follows:
 
 where git.buildnumber corresponds to the following git evaluation:
 
-> tag + "_" + branch + "_" + shortRevision + "_" + commitsCount
+> tag + "_" + branch
 
 #Requirements
 You need to have docker install on your linux for this to run (https://docs.docker.com/installation/fedora/)
