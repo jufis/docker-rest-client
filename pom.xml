@@ -124,7 +124,7 @@
 							<alias>dockerServer</alias>
 							<!-- if there is no . or : before / like here there is no registry 
 								defined, so registry tag in use now -->
-							<name>jufis/docker-rest-server:${git.buildnumber}</name>
+							<name>jufis/docker-rest-client:${git.buildnumber}</name>
 
 							<build>
 								<from>dockerfile/java:oracle-java7</from>
