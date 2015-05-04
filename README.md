@@ -14,7 +14,7 @@ where git.buildnumber corresponds to the following git evaluation:
 > tag + "_" + branch
 
 #Requirements
-You need to have docker install on your linux for this to run (https://docs.docker.com/installation/fedora/)
+You need to have docker installed on your linux for this to run (https://docs.docker.com/installation/fedora/)
 
 Quick setup
 
@@ -34,28 +34,95 @@ Quick setup
 
 >$ sudo usermod -a -G docker $USERNAME
 
-#Build
-Setup maven or run from eclipse:
+You need to have docker listening to a server socket:
 
->mvn clean package
+>vi /etc/sysconfig/docker
 
-List docker image:
+and alter the OPTIONS var as follows:
+
+OPTIONS='--selinux-enabled -H tcp://localhost:2375'
+
+and restart docker:
+
+>systemctl stop docker
+
+>systemctl start docker
+
+and check that 2375 listens:
+
+>netstat -an |grep 2375
+
+and export docker host env var for your docker client cmds:
+
+>vi /etc/bashrc
+
+at the end put:
+
+>export DOCKER_HOST=tcp://localhost:2375 
+
+You need to have a docker registry running, [check here for more.](REGISTRY.md)
+
+Finally:
+
+You need to have a jdk7 installed from oracle and set JAVA_HOME to the jdk location.
+
+You need to have maven installed and M2_HOME variable pointing to your maven installation.
+
+You need to have git installed on linux.
+
+#General Usage Instructions
+First clone from github the project:
+
+>git clone https://github.com/jufis/docker-rest-server.git
+
+>cd docker-rest-server
+
+Run the following cmd to clean the project:
+
+>mvn clean
+
+Run the following cmd to build the project:
+
+>mvn package
+
+Run the following cmd to build the project and build the docker container:
+
+>mvn package docker:build
+
+Check the the docker container image is ok locally:
 
 >docker images
 
-Assuming that you run your private docker-registry using the following cmd:
+Run the following cmd to start the container:
 
->docker run -p 5000:5000 registry
+>mvn prepare-package docker:start
 
-You can clean, package and deploy docker container to remote registry as follows:
+Check that the docker container is started:
 
->mvn clean package docker:deploy
+>docker ps
 
-NOTE: Seems that you need to prefix "tag" in conf.yml so that it allows connecting to localhost:5000 as follows:
+Run the following cmd to stop the container:
 
-> localhost:5000/your_container_name
+>mvn prepare-package docker:stop
 
-#Running the client in docker container
+Check that the docker container stopped:
+
+>docker ps
+
+Run the following cmd to push container to our local private docker registry:
+
+>mvn prepare-package docker:push
+
+Run the following cmd to tail logs from all your running containers:
+
+>mvn docker:logs -Ddocker.follow -Ddocker.logDate=DEFAULT -Ddocker.logAll=true
+
+Finally run the following cmd to remove the image:
+
+>mvn prepare-package docker:remove
+
+
+#Running the client in docker container manually
 Enter the following command to run the client container:
 
 > docker run -i -t --rm --name client --link docker-server:server net.jufis/docker-rest-client:GIT_TAG
@@ -84,6 +151,6 @@ To reset docker from all processes/images run this:
 
 > docker stop $(docker ps -a -q)
 
->docker rm $(docker ps -a -q)
+>docker rm -f $(docker ps -a -q)
 
->docker rmi $(docker images -q)
+>docker rmi -f $(docker images -q)

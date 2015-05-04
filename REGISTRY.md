@@ -14,11 +14,9 @@ The install httpd,mod_ssl and openssl:
 
 >sudo yum install -y openssl
 
-Create a few dirs as root user:
+Create a ssl dir as root user:
 
 >sudo mkdir /etc/httpd/ssl
-
->sudo mkdir /etc/httpd/htpasswd
 
 Create certificates for the server:
 
@@ -43,34 +41,51 @@ Add the following to the docker.conf file:
 '''
 
 		<VirtualHost *:443>
-        ServerName registry.jufis.net
-        ServerAlias registry.jufis.net
-
-        SSLEngine on
-        SSLCertificateFile /etc/httpd/ssl/server.crt
-        SSLCertificateKeyFile /etc/httpd/ssl/server.key
-
-        Header set Host "registry.jufis.net"
-        RequestHeader set X-Forwarded-Proto "https"
-        ProxyRequests     off
-        ProxyPreserveHost on
-        ProxyPass         / http://127.0.0.1:5000/
-        ProxyPassReverse  / http://127.0.0.1:5000/
-        ErrorLog /etc/httpd/logs/registry-error.log
-        LogLevel warn
-        CustomLog /etc/httpd/logs/registry-access.log combined
-        <Location />
-                Order deny,allow
-                Allow from all
-        </Location>
-        <Location /v1/_ping>
-                Satisfy any
-                Allow from all
-        </Location>
-        <Location /_ping>
-               Satisfy any
-               Allow from all
-        </Location>
-</VirtualHost>
-
+	        ServerName registry.jufis.net
+	        ServerAlias registry.jufis.net
+	
+	        SSLEngine on
+	        SSLCertificateFile /etc/httpd/ssl/server.crt
+	        SSLCertificateKeyFile /etc/httpd/ssl/server.key
+	
+	        Header set Host "registry.jufis.net"
+	        RequestHeader set X-Forwarded-Proto "https"
+	        ProxyRequests     off
+	        ProxyPreserveHost on
+	        ProxyPass         / http://127.0.0.1:5000/
+	        ProxyPassReverse  / http://127.0.0.1:5000/
+	        ErrorLog /etc/httpd/logs/registry-error.log
+	        LogLevel warn
+	        CustomLog /etc/httpd/logs/registry-access.log combined
+	        <Location />
+	                Order deny,allow
+	                Allow from all
+	        </Location>
+	        <Location /v1/_ping>
+	                Satisfy any
+	                Allow from all
+	        </Location>
+	        <Location /_ping>
+	               Satisfy any
+	               Allow from all
+	        </Location>
+		</VirtualHost>
 '''
+
+Start apache:
+
+>systemctl start httpd
+
+Start registry:
+
+>systemctl start docker-registry
+
+Check ports are open:
+
+>netstat -an | grep -e 5000 -e 443
+
+Stop firewall:
+
+>systemctl stop firewalld
+
+
