@@ -124,27 +124,7 @@
 							<alias>dockerServer</alias>
 							<!-- if there is no . or : before / like here there is no registry 
 								defined, so registry tag in use now -->
-							<name>jufis/docker-rest-client:${git.buildnumber}</name>
-
-							<build>
-								<from>dockerfile/java:oracle-java7</from>
-								<maintainer>jufis@jufis.net</maintainer>
-								<tags>
-									<tag>${git.buildnumber}</tag>
-								</tags>
-								<ports>
-									<port>8080</port>
-								</ports>
-								<volumes>
-									<volume>/tmp</volume>
-								</volumes>
-								<command>java -jar
-									/maven/${project.artifactId}-${project.version}-${git.buildnumber}.jar</command>
-								<assembly>
-									<basedir>/maven</basedir>
-									<descriptorRef>artifact</descriptorRef>
-								</assembly>
-							</build>
+							<name>jufis/docker-rest-server:${git.buildnumber}</name>
 
 							<run>
 								<namingStrategy>alias</namingStrategy>
