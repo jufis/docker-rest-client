@@ -1,5 +1,6 @@
 #Quick guide on how to setup private docker registry over SSL
 
+
 I'm assuming a fedora 20 linux 64bit box here.
 
 First install docker-registry with yum:
