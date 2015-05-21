@@ -91,7 +91,7 @@
 									<alias>dockerClient</alias>
 									<!-- if there is no . or : before / like here there is no registry 
 										defined, so registry tag in use now -->
-									<name>${custom.docker.registry.hostname}/${custom.docker.user.repository}/docker-rest-client:latest</name>
+									<name>${custom.docker.registry.hostname}/${custom.docker.user.repository}/${project.artifactId}:latest</name>
 
 									<build>
 										<from>${docker.java.image.version}</from>
@@ -297,7 +297,7 @@
 									<alias>dockerClient</alias>
 									<!-- if there is no . or : before / like here there is no registry 
 										defined, so registry tag in use now -->
-									<name>${custom.docker.registry.hostname}/ci/docker-rest-client:${git.buildnumber}</name>
+									<name>${custom.docker.registry.hostname}/ci/${project.artifactId}:${git.buildnumber}</name>
 
 									<build>
 										<from>${docker.java.image.version}</from>
@@ -352,8 +352,6 @@
 								</image>
 							</images>
 						</configuration>
-						<!-- Connect this plugin to the maven lifecycle around the integration-test 
-							phase. I.e. start the container in pre-integration-test and stop it in post-integration-test. -->
 						<executions>
 							<!-- if your unit tests require to start stop the docker image uncomment, 
 								but make sure that the server component docker image first exists -->
@@ -507,7 +505,7 @@
 									<alias>dockerClient</alias>
 									<!-- if there is no . or : before / like here there is no registry 
 										defined, so registry tag in use now -->
-									<name>${custom.docker.registry.hostname}/prod/docker-rest-client:${git.buildnumber}</name>
+									<name>${custom.docker.registry.hostname}/prod/${project.artifactId}:${git.buildnumber}</name>
 
 									<build>
 										<from>${docker.java.image.version}</from>

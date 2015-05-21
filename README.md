@@ -5,13 +5,14 @@ It uses the rhuss [docker-maven-plugin](https://github.com/rhuss/docker-maven-pl
 
 It assumes you run a local private docker-registry running on port 443 over SSL wihout basic auth.
 
-When packaging using maven the docker container extracted is TAGed as follows:
+When packaging using maven *ci or prod* profiles the docker container extracted is TAGed as follows:
 
 > ${project.artifactId}-${project.version}-${git.buildnumber}
 
 where git.buildnumber corresponds to the following git evaluation:
 
 > tag + "_" + branch
+
 
 ##Requirements
 
@@ -50,15 +51,19 @@ The *dev* profile is enabled by default. That causes the docker image to be crea
 
 >registry.jufis.net:443/USERNAME-dev/docker-rest-client:latest
 
-That will allow the developer to use his own repository eg. jufis-dev inside the docker registry and not conflict his changes amongst other developers working on the same docker-registry on different features.
+That will allow the developer to use his own repository eg. jufis-dev inside the docker registry and not conflict his changes amongst other developers working on the same docker-registry on different features of the same image.
 
 The *ci* profile can be enabled as follows:
 
 >mvn ... -P ci
 
+or
+
+>mvn -Denvironment=ci ...
+
 The *ci* profile guarantees that the docker image created is using GIT_TAG information so that the docker image gets created in the *ci* repository with the following format:
 
->registry.jufis.net:443/ci/docker-rest-client.{project.version}:GIT_TAG
+>registry.jufis.net:443/ci/docker-rest-client:GIT_TAG
 
 <pre>
 ATTENTION: if GIT nature is not found or GIT tag not exists package phase will fail on purpose with a characteristic msg.
@@ -71,9 +76,13 @@ The *prod* profile can be enabled as follows:
 
 >mvn ... -P prod
 
+or
+
+>mvn -Denvironment=prod ...
+
 The *prod* profile guarantees that the docker image created is using GIT_TAG information so that the docker image to be created in the *prod* repository as follows:
 
->registry.jufis.net:443/prod/docker-rest-client.{project.version}:GIT_TAG
+>registry.jufis.net:443/prod/docker-rest-client:GIT_TAG
 
 <pre>
 ATTENTION: if GIT nature is not found or GIT tag not exists package phase will fail on purpose with a characteristic msg.
@@ -81,6 +90,7 @@ ATTENTION: if GIT nature is not found or GIT tag not exists package phase will f
 If you create a TAG from master this tag will be used for building the image.
 If after TAG creation on master you change a single file this TAG not exists anymore and the build will fail.
 </pre>
+
 
 ##General Instructions
 
@@ -96,6 +106,8 @@ Run the following cmd to clean-up the project:
 
 <pre>
 NOTE: this phase also calls docker:remove with -Ddocker.removeAll in order to remove any pre-built docker image.
+
+In cases that you have local dev/ci/prod mixture of images clean doesn't remove image due to dependencies; look at the very bottom of this readme in order to flush all docker images.
 </pre>
 
 Run the following cmd to complile the project:
@@ -137,6 +149,10 @@ NOTE: the docker-rest-client docker image depends on having already the docker-r
 Check that the docker container is started:
 
 >docker ps
+
+Run the following cmd to tail logs from all your running containers:
+
+>mvn docker:logs -Ddocker.follow -Ddocker.logDate=DEFAULT -Ddocker.logAll=true
 
 Run the following cmd to stop the container:
 
