@@ -1,7 +1,7 @@
 #Sample docker rest client
 This is a sample app inheriting from spring boot to create a REST client container to communicate for the docker-rest-server repository purposes.
 
-It uses the rhuss excelenet [docker-maven-plugin](https://github.com/rhuss/docker-maven-plugin "rhuss docker-maven-plugin") to build/start/stop/push/check logs a docker image. 
+It uses the rhuss [docker-maven-plugin](https://github.com/rhuss/docker-maven-plugin "rhuss docker-maven-plugin") to build/start/stop/push/check logs a docker image. 
 
 It assumes you run a local private docker-registry running on port 443 over SSL wihout basic auth.
 
@@ -13,54 +13,21 @@ where git.buildnumber corresponds to the following git evaluation:
 
 > tag + "_" + branch
 
-#Requirements
-You need to have docker installed on your linux for this to run (https://docs.docker.com/installation/fedora/)
+##Requirements
 
-Quick setup
+Here we have configured our pom to depend on a secured docker client to "talk" to a secure docker daemon which in turn "talks" to a private docker registry in order push our docker images with maven.
 
->$ sudo yum -y remove docker
+If you have not setup docker follow this link:
 
->$ sudo yum -y install docker-io
+>https://github.com/jufis/docker/blob/master/docs/docker-installation.md
 
->$ sudo yum -y update docker-io
+If you have not configure secure docker daemon follow this link:
 
->$ sudo systemctl start docker
+>https://github.com/jufis/docker/blob/master/docs/docker-security.md
 
->$ sudo systemctl enable docker
+If you have not setup a private docker registry follow this link:
 
->$ sudo groupadd docker
-
->$ sudo chown root:docker /var/run/docker.sock
-
->$ sudo usermod -a -G docker $USERNAME
-
-You need to have docker listening to a server socket:
-
->vi /etc/sysconfig/docker
-
-and alter the OPTIONS var as follows:
-
-OPTIONS='--selinux-enabled -H tcp://localhost:2375'
-
-and restart docker:
-
->systemctl stop docker
-
->systemctl start docker
-
-and check that 2375 listens:
-
->netstat -an |grep 2375
-
-and export docker host env var for your docker client cmds:
-
->vi /etc/bashrc
-
-at the end put:
-
->export DOCKER_HOST=tcp://localhost:2375 
-
-You need to have a docker registry running, [check here for more.](REGISTRY.md)
+>https://github.com/jufis/docker/blob/master/docs/docker-registry.md
 
 Finally:
 
@@ -68,34 +35,104 @@ You need to have a jdk7 installed from oracle and set JAVA_HOME to the jdk locat
 
 You need to have maven installed and M2_HOME variable pointing to your maven installation.
 
-You need to have git installed on linux.
+You need to have git installed on your linux.
 
-#General Usage Instructions
+
+##Profiles
+
+This pom uses profile to seperate for the following environments:
+
+1. dev  = local development environment
+2. ci   = continous integration
+3. prod = production live environment
+
+The *dev* profile is enabled by default. That causes the docker image to be created as follows in the docker-registry:
+
+>registry.jufis.net:443/USERNAME-dev/docker-rest-client:latest
+
+That will allow the developer to use his own repository eg. jufis-dev inside the docker registry and not conflict his changes amongst other developers working on the same docker-registry on different features.
+
+The *ci* profile can be enabled as follows:
+
+>mvn ... -P ci
+
+The *ci* profile guarantees that the docker image created is using GIT_TAG information so that the docker image gets created in the *ci* repository with the following format:
+
+>registry.jufis.net:443/ci/docker-rest-client.{project.version}:GIT_TAG
+
+<pre>
+ATTENTION: if GIT nature is not found or GIT tag not exists package phase will fail on purpose with a characteristic msg.
+
+If you create a TAG from master this tag will be used for building the image.
+If after TAG creation on master you change a single file this TAG not exists anymore and the build will fail.
+</pre>
+
+The *prod* profile can be enabled as follows:
+
+>mvn ... -P prod
+
+The *prod* profile guarantees that the docker image created is using GIT_TAG information so that the docker image to be created in the *prod* repository as follows:
+
+>registry.jufis.net:443/prod/docker-rest-client.{project.version}:GIT_TAG
+
+<pre>
+ATTENTION: if GIT nature is not found or GIT tag not exists package phase will fail on purpose with a characteristic msg.
+
+If you create a TAG from master this tag will be used for building the image.
+If after TAG creation on master you change a single file this TAG not exists anymore and the build will fail.
+</pre>
+
+##General Instructions
+
 First clone from github the project:
 
->git clone https://github.com/jufis/docker-rest-server.git
+>git clone https://github.com/jufis/docker-rest-client.git
 
->cd docker-rest-server
+>cd docker-rest-client
 
-Run the following cmd to clean the project:
+Run the following cmd to clean-up the project:
 
 >mvn clean
 
-Run the following cmd to build the project:
+<pre>
+NOTE: this phase also calls docker:remove with -Ddocker.removeAll in order to remove any pre-built docker image.
+</pre>
 
+Run the following cmd to complile the project:
+
+>mvn compile
+
+<pre>
+NOTE: this phase doesn't build the docker image.
+</pre>
+
+Run the following cmd to build the project:
+ 
 >mvn package
 
-Run the following cmd to build the project and build the docker container:
+<pre>
+NOTE: this phase also calls docker:build in order to build the docker image.
+</pre>
 
->mvn package docker:build
+Run the following cmd to deploy:
 
-Check the the docker container image is ok locally:
+>mvn deploy
+
+<pre>
+NOTE: this phase also calls docker:push in order to push the image to the private docker registry automatically.
+</pre>
+
+Check that the docker container image is ok locally:
 
 >docker images
 
 Run the following cmd to start the container:
 
 >mvn prepare-package docker:start
+
+<pre>
+NOTE: the docker-rest-client docker image depends on having already the docker-rest-server already built and the docker image created.
+</pre>
 
 Check that the docker container is started:
 
@@ -121,11 +158,17 @@ Finally run the following cmd to remove the image:
 
 >mvn prepare-package docker:remove
 
+<pre>
+NOTE: Since I'm not using artifactory or nexus you need to change the distribution management in the pom to point to your remote repository.
+</pre>
 
-#Running the client in docker container manually
+
+##Running the client in docker container manually
 Enter the following command to run the client container:
 
-> docker run -i -t --rm --name client --link docker-server:server net.jufis/docker-rest-client:GIT_TAG
+> docker run -i -t --rm --name client --link docker-server:server net.jufis/REPO/docker-rest-client:GIT_TAG
+
+You can fnd the REPO by checking the profiles section above.
 
 You can find the GIT_TAG if you list the docker images with:
 
@@ -145,11 +188,11 @@ For more on linking containers see the following links:
 <br/>
 <a href=https://docs.oracle.com/cd/E52668_01/E54669/html/section_rsr_p2z_fp.html>https://docs.oracle.com/cd/E52668_01/E54669/html/section_rsr_p2z_fp.html</a>
 
-#Cleaning up all docker containers
+##Cleaning up all docker containers
 
 To reset docker from all processes/images run this:
 
-> docker stop $(docker ps -a -q)
+>docker stop $(docker ps -a -q)
 
 >docker rm -f $(docker ps -a -q)
 
